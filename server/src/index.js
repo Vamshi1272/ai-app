@@ -3,18 +3,23 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
+import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
+
+import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
+import db from './utils/db.js';
 
 import authRoutes from './routes/auth.js';
 import documentRoutes from './routes/documents.js';
 import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
+
 const app = express();
 
-// // Fix __dirname
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
+// Fix __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // CORS
 app.use(cors({
@@ -22,35 +27,33 @@ app.use(cors({
   credentials: true
 }));
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Test route
-app.get('/', (req, res) => {
-  res.send('SERVER WORKING ✅');
-});
-
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Error handler
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Endpoint not found' });
+// ===== SERVE FRONTEND =====
+app.use(express.static(path.join(__dirname, "../../client/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../client/dist/index.html"));
 });
 
+// PORT
 const PORT = process.env.PORT || 5001;
 
+// Start server
 app.listen(PORT, async () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  await seedAdmin(); // 🔥 ADD THIS LINE
+  await seedAdmin();
 });
-import bcrypt from 'bcryptjs';
-import { v4 as uuidv4 } from 'uuid';
-import db from './utils/db.js';
 
+// ===== ADMIN SEED FUNCTION =====
 async function seedAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@docrevamp.com';
   const adminPass = process.env.ADMIN_PASSWORD || 'Admin@SecurePass123!';
@@ -72,15 +75,3 @@ async function seedAdmin() {
     console.log(`✅ Admin already exists: ${adminEmail}`);
   }
 }
-import { dirname } from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Serve frontend
-app.use(express.static(path.join(__dirname, "../../client/dist")));
-
-// Catch all routes and send frontend
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../../client/dist/index.html"));
-});
