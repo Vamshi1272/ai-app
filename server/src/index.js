@@ -12,9 +12,9 @@ import paymentRoutes from './routes/payments.js';
 import adminRoutes from './routes/admin.js';
 const app = express();
 
-// Fix __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// // Fix __dirname
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // CORS
 app.use(cors({
@@ -72,3 +72,17 @@ async function seedAdmin() {
     console.log(`✅ Admin already exists: ${adminEmail}`);
   }
 }
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Serve frontend
+app.use(express.static(path.join(__dirname, "../../client/dist")));
+
+// Catch all routes and send frontend
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../../client/dist/index.html"));
+});
