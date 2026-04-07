@@ -3,13 +3,14 @@ import api from '../utils/api';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const loadUser = useCallback(async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) { setLoading(false); return; }
+
     try {
       const res = await api.get('/api/auth/me');
       setUser(res.data.user);
@@ -21,7 +22,9 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => { loadUser(); }, [loadUser]);
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   const login = (userData, accessToken, refreshToken) => {
     localStorage.setItem('accessToken', accessToken);
@@ -34,6 +37,7 @@ export function AuthProvider({ children }) {
       const refreshToken = localStorage.getItem('refreshToken');
       await api.post('/api/auth/logout', { refreshToken });
     } catch {}
+
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     setUser(null);
@@ -44,10 +48,12 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
-}
+};
+
+export { AuthProvider, useAuth };

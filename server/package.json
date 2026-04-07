@@ -2,7 +2,9 @@
   "name": "ai-server",
   "version": "1.0.0",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
+    "dev": "nodemon src/index.js",
     "start": "node src/index.js"
   },
   "dependencies": {
@@ -17,8 +19,16 @@
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.0",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.4",
-    "uuid": "^13.0.0"
+    "otp-generator": "^4.0.1",
+    "stripe": "^22.0.0",
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }

@@ -34,7 +34,7 @@ export default function AdminUsers() {
 
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
-      await api.patch(`/api/admin/users/${userId}/status`, { is_active: !currentStatus });
+      await api.patch(`/api/admin/users/${userId}/status`, { isActive: !currentStatus });
       toast.success(`User ${currentStatus ? 'deactivated' : 'activated'}`);
       fetchUsers();
     } catch { toast.error('Failed to update user'); }

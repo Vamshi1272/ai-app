@@ -100,9 +100,16 @@ export default function AdminDocuments() {
 
   useEffect(() => { fetchDocs(); }, [page, filters]);
 
+  useEffect(() => {
+    return () => clearTimeout(searchTimeout.current);
+  }, []);
+
   const handleSearch = (val) => {
     clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => { setFilters(f => ({ ...f, search: val })); setPage(1); }, 400);
+    searchTimeout.current = setTimeout(() => {
+      setFilters(f => ({ ...f, search: val }));
+      setPage(1);
+    }, 400);
   };
 
   const handleDownloadOriginal = async (doc) => {
@@ -137,7 +144,10 @@ export default function AdminDocuments() {
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: '1 1 220px' }}>
                   <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input className="form-input" placeholder="Search by user or filename..." style={{ paddingLeft: 38 }} onChange={e => handleSearch(e.target.value)} />
+                  <input className="form-input" placeholder="Search by user or filename..." style={{ paddingLeft: 38 }}
+                    value={filters.search}
+                    onChange={e => handleSearch(e.target.value)}
+                  />
                 </div>
                 <select className="form-input" style={{ width: 160 }} value={filters.status} onChange={e => { setFilters(f => ({ ...f, status: e.target.value })); setPage(1); }}>
                   <option value="">All Statuses</option>

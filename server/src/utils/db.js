@@ -1,9 +1,15 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+// ✅ Fix __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // On Vercel, the filesystem is ephemeral and read-only except /tmp
 const IS_VERCEL = process.env.VERCEL === '1';
+
 const DB_PATH = IS_VERCEL
   ? '/tmp/docrevamp.db'
   : path.join(__dirname, '../../data/docrevamp.db');
@@ -14,8 +20,8 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+// Create DB
 const db = new Database(DB_PATH);
-console.log('DB created at:', DB_PATH);
 
 // Enable WAL mode for better performance and concurrency
 db.pragma('journal_mode = WAL');
@@ -108,4 +114,4 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
 `);
 
-module.exports = db;
+export default db;
