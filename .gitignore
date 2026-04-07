@@ -35,7 +35,7 @@ Thumbs.db
 *.swo
 
 # Build outputs
-client/dist/
+#client/dist/
 server/dist/
 
 # Temporary files
