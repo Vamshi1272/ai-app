@@ -64,16 +64,22 @@ async function seedAdmin() {
     'SELECT id FROM users WHERE email = ? AND is_admin = 1'
   ).get(adminEmail);
 
-  if (!existing) {
-    const hash = await bcrypt.hash(adminPass, 12);
+  const hash = await bcrypt.hash(adminPass, 12);
 
+  if (!existing) {
+    // ✅ CREATE ADMIN
     db.prepare(`
       INSERT INTO users (id, email, password_hash, full_name, is_admin, email_verified)
       VALUES (?, ?, ?, 'Admin', 1, 1)
     `).run(uuidv4(), adminEmail, hash);
 
-    console.log(`🔥 Admin user created: ${adminEmail}`);
+    console.log(`🔥 Admin created: ${adminEmail}`);
   } else {
-    console.log(`✅ Admin already exists: ${adminEmail}`);
+    // 🔥 UPDATE PASSWORD EVERY TIME
+    db.prepare(`
+      UPDATE users SET password_hash = ? WHERE email = ?
+    `).run(hash, adminEmail);
+
+    console.log(`♻️ Admin password updated: ${adminEmail}`);
   }
 }
