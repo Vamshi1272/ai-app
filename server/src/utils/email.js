@@ -11,7 +11,7 @@ const sendEmail = async ({ to, subject, html }) => {
 
     await resend.emails.send({
       from: process.env.EMAIL_FROM,
-      to: to,
+      to: [to],
       subject: subject,
       html: html,
     });
