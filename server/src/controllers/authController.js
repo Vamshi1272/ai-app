@@ -10,17 +10,23 @@ import bcrypt from "bcryptjs";
 // SEND OTP
 export const sendOtp = async (req, res) => {
   try {
-    console.log("🔥 ADMIN LOGIN API HIT");
+    console.log("🔥 SEND OTP API HIT");
+
     const { email } = req.body;
+    console.log("📧 Email:", email);
 
     const otp = generateOtp();
+    console.log("🔢 Generated OTP:", otp);
+
     const hashedOtp = await hashOtp(otp);
 
     await Otp.create({
       email,
       otp: hashedOtp,
-      expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
+      expiresAt: Date.now() + 5 * 60 * 1000,
     });
+
+    console.log("📨 About to send email...");
 
     // ✅ SEND EMAIL
     await sendEmail({
@@ -35,13 +41,16 @@ export const sendOtp = async (req, res) => {
       `,
     });
 
+    console.log("✅ OTP email function completed");
+
     res.json({ success: true, message: "OTP sent" });
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ SEND OTP ERROR:", err);
     res.status(500).json({ message: "Error sending OTP" });
   }
 };
+
 
 // VERIFY OTP
 export const verifyOtp = async (req, res) => {
@@ -54,7 +63,6 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    // ✅ CHECK EXPIRY
     if (record.expiresAt < Date.now()) {
       return res.status(400).json({ message: "OTP expired" });
     }
@@ -65,7 +73,6 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // ✅ DELETE USED OTP
     await Otp.deleteMany({ email });
 
     const token = jwt.sign({ email }, process.env.JWT_SECRET, {
@@ -75,30 +82,39 @@ export const verifyOtp = async (req, res) => {
     res.json({ success: true, token });
 
   } catch (err) {
+    console.error("❌ VERIFY OTP ERROR:", err);
     res.status(500).json({ message: "Verification failed" });
   }
 };
+
 
 // ================= ADMIN LOGIN =================
 
 // STEP 1: PASSWORD CHECK + SEND OTP
 export const adminLogin = async (req, res) => {
   try {
+    console.log("🔥 ADMIN LOGIN API HIT");
+
     const { email, password } = req.body;
+    console.log("📧 Admin email:", email);
 
     const user = await User.findOne({ email });
 
     if (!user || !user.is_admin) {
+      console.log("❌ Not an admin");
       return res.status(401).json({ message: "Not an admin" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {
+      console.log("❌ Invalid password");
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const otp = generateOtp();
+    console.log("🔢 Admin OTP:", otp);
+
     const hashedOtp = await hashOtp(otp);
 
     await Otp.create({
@@ -106,6 +122,8 @@ export const adminLogin = async (req, res) => {
       otp: hashedOtp,
       expiresAt: Date.now() + 5 * 60 * 1000,
     });
+
+    console.log("📨 Sending ADMIN OTP email...");
 
     // ✅ SEND ADMIN OTP EMAIL
     await sendEmail({
@@ -120,13 +138,16 @@ export const adminLogin = async (req, res) => {
       `,
     });
 
+    console.log("✅ Admin OTP email sent");
+
     res.json({ success: true, message: "Admin OTP sent" });
 
   } catch (err) {
-    console.log(err);
+    console.error("❌ ADMIN LOGIN ERROR:", err);
     res.status(500).json({ message: "Admin login failed" });
   }
 };
+
 
 // STEP 2: VERIFY ADMIN OTP
 export const verifyAdminOtp = async (req, res) => {
@@ -139,7 +160,6 @@ export const verifyAdminOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP expired" });
     }
 
-    // ✅ CHECK EXPIRY
     if (record.expiresAt < Date.now()) {
       return res.status(400).json({ message: "OTP expired" });
     }
@@ -150,7 +170,6 @@ export const verifyAdminOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // ✅ DELETE OTP AFTER USE
     await Otp.deleteMany({ email });
 
     const user = await User.findOne({ email });
@@ -168,6 +187,7 @@ export const verifyAdminOtp = async (req, res) => {
     });
 
   } catch (err) {
+    console.error("❌ VERIFY ADMIN OTP ERROR:", err);
     res.status(500).json({ message: "OTP verification failed" });
   }
 };
