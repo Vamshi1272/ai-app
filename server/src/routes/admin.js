@@ -1,13 +1,11 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
-import { body, validationResult } from 'express-validator';
+import { body } from 'express-validator';
 import db from '../utils/db.js';
 import { authenticate, requireAdmin, auditLog } from '../middleware/auth.js';
-import { uploadProcessed, handleUploadError, PROCESSED_DIR } from '../middleware/upload.js';
+import { uploadProcessed, handleUploadError } from '../middleware/upload.js';
 import sendEmail from '../utils/email.js';
-import logger from '../utils/logger.js';
 import { fileURLToPath } from 'url';
 
 // Fix __dirname
@@ -18,6 +16,7 @@ const router = express.Router();
 
 // All admin routes require authentication + admin role
 router.use(authenticate, requireAdmin);
+
 // ================= GET AUDIT LOGS =================
 router.get('/audit-logs', (req, res) => {
   try {
@@ -29,19 +28,14 @@ router.get('/audit-logs', (req, res) => {
       LIMIT 100
     `).all();
 
-    res.json({
-      success: true,
-      logs
-    });
+    res.json({ success: true, logs });
 
   } catch (err) {
     console.log("AUDIT LOG ERROR:", err);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load logs'
-    });
+    res.status(500).json({ success: false, message: 'Failed to load logs' });
   }
 });
+
 // ================= GET USERS =================
 router.get('/users', (req, res) => {
   try {
@@ -51,20 +45,15 @@ router.get('/users', (req, res) => {
       ORDER BY created_at DESC
     `).all();
 
-    res.json({
-      success: true,
-      users
-    });
+    res.json({ success: true, users });
 
   } catch (err) {
     console.log("GET USERS ERROR:", err);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to load users'
-    });
+    res.status(500).json({ success: false, message: 'Failed to load users' });
   }
 });
-// GET /api/admin/dashboard - Stats overview
+
+// ================= DASHBOARD =================
 router.get('/dashboard', (req, res) => {
   const stats = {
     totalUsers: db.prepare('SELECT COUNT(*) as c FROM users WHERE is_admin = 0').get().c,
@@ -84,7 +73,7 @@ router.get('/dashboard', (req, res) => {
   res.json({ success: true, stats });
 });
 
-// GET /api/admin/documents
+// ================= GET DOCUMENTS =================
 router.get('/documents', (req, res) => {
   const { status, payment_status, page = 1, limit = 20, search } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -117,7 +106,7 @@ router.get('/documents', (req, res) => {
   res.json({ success: true, documents: docs, total });
 });
 
-// DOWNLOAD ORIGINAL FILE
+// ================= DOWNLOAD ORIGINAL =================
 router.get('/documents/:id/download-original', (req, res) => {
   const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
 
@@ -132,7 +121,7 @@ router.get('/documents/:id/download-original', (req, res) => {
   res.download(filePath, doc.original_filename);
 });
 
-// UPLOAD PROCESSED FILE
+// ================= UPLOAD PROCESSED =================
 router.post(
   '/documents/:id/upload-processed',
   auditLog('upload_processed', 'document'),
@@ -143,32 +132,48 @@ router.post(
     });
   },
   async (req, res) => {
-    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+      }
 
-    const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
+      const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
 
-    if (!doc) {
-      fs.unlinkSync(req.file.path);
-      return res.status(404).json({ success: false, message: 'Document not found' });
+      if (!doc) {
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ success: false, message: 'Document not found' });
+      }
+
+      db.prepare(`
+        UPDATE documents SET
+          processed_filename = ?, status = 'completed', processed_at = unixepoch()
+        WHERE id = ?
+      `).run(req.file.filename, req.params.id);
+
+      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(doc.user_id);
+
+      // ✅ FIXED EMAIL SENDING
+      if (user) {
+        await sendEmail({
+          to: user.email,
+          subject: "Your document is ready",
+          html: `
+            <h2>Your document is ready</h2>
+            <p>You can now download your processed file.</p>
+          `,
+        });
+      }
+
+      res.json({ success: true, message: 'Processed document uploaded' });
+
+    } catch (err) {
+      console.error("UPLOAD PROCESSED ERROR:", err);
+      res.status(500).json({ success: false, message: 'Upload failed' });
     }
-
-    db.prepare(`
-      UPDATE documents SET
-        processed_filename = ?, status = 'completed', processed_at = unixepoch()
-      WHERE id = ?
-    `).run(req.file.filename, req.params.id);
-
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(doc.user_id);
-
-    if (user) {
-      sendEmail(user.email, `Your document is ready`);
-    }
-
-    res.json({ success: true, message: 'Processed document uploaded' });
   }
 );
 
-// UPDATE STATUS
+// ================= UPDATE STATUS =================
 router.patch('/documents/:id/status', [
   body('status').optional().isIn(['pending', 'processing', 'completed']),
 ], (req, res) => {
@@ -183,13 +188,12 @@ router.patch('/documents/:id/status', [
 
   res.json({ success: true });
 });
+
 // ================= UPDATE USER STATUS =================
 router.patch('/users/:id/status', (req, res) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;
-
-    console.log("Updating user:", id, isActive);
 
     const result = db.prepare(`
       UPDATE users
@@ -217,4 +221,5 @@ router.patch('/users/:id/status', (req, res) => {
     });
   }
 });
+
 export default router;
