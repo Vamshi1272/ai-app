@@ -1,28 +1,22 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const sendEmail = async (email, otp) => {
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const sendEmail = async ({ to, subject, html }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
+    console.log("Sending email to:", to);
+
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM,
+      to: to, // keep this same
+      subject: subject,
+      html: html,
     });
 
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP is ${otp}`
-    });
-
-    console.log("✅ Email sent:", info.response);
-
+    console.log("Email sent successfully");
   } catch (error) {
-    console.log("❌ FULL EMAIL ERROR:", error);
-    throw error;
+    console.error("Email error:", error);
   }
 };
 
-export default sendEmail; 
+export default sendEmail;

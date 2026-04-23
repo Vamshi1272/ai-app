@@ -23,7 +23,7 @@ export const sendOtp = async (req, res) => {
 
     // ✅ SEND EMAIL
     await sendEmail({
-      to: email,
+      to: [email],
       subject: "Your OTP Code",
       html: `
         <div style="font-family:sans-serif">
@@ -108,7 +108,7 @@ export const adminLogin = async (req, res) => {
 
     // ✅ SEND ADMIN OTP EMAIL
     await sendEmail({
-      to: email,
+      to: [email],
       subject: "Admin Login OTP",
       html: `
         <div style="font-family:sans-serif">
