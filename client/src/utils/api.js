@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'https://ai-app-4iiy.onrender.com/api',
   // baseURL: 'http://localhost:5001', // ✅ FIX
   timeout: 30000
 });
