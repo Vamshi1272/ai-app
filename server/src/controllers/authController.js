@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 // SEND OTP
 export const sendOtp = async (req, res) => {
   try {
+    console.log("🔥 ADMIN LOGIN API HIT");
     const { email } = req.body;
 
     const otp = generateOtp();
