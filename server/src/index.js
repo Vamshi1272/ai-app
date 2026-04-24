@@ -24,7 +24,12 @@ const __dirname = dirname(__filename);
 
 // CORS
 app.use(cors({
-  origin: [process.env.CLIENT_URL || 'http://localhost:5173'],
+  origin: [
+    process.env.CLIENT_URL,
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175"
+  ],
   credentials: true
 }));
 
@@ -53,7 +58,12 @@ const PORT = process.env.PORT || 5001;
 // Start server
 app.listen(PORT, async () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  await seedAdmin();
+
+  try {
+    await seedAdmin();
+  } catch (err) {
+    console.error("❌ Seed admin error:", err);
+  }
 });
 
 // ===== ADMIN SEED FUNCTION =====
