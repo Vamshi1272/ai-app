@@ -17,7 +17,7 @@ function UploadModal({ doc, onClose, onSuccess }) {
     formData.append('admin_notes', adminNotes);
     setLoading(true);
     try {
-      await api.post(`/api/admin/documents/${doc.id}/upload-processed`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.post(`/admin/documents/${doc.id}/upload-processed`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Processed document uploaded! User notified.');
       onSuccess();
     } catch (err) {
@@ -91,7 +91,7 @@ export default function AdminDocuments() {
     try {
       const params = new URLSearchParams({ page, limit: 15, ...Object.fromEntries(Object.entries(filters).filter(([, v]) => v)) });
       const res = await api.get(`/admin/documents?${params}`);
-      setDocuments(res.data.documents || []);
+      setDocuments(Array.isArray(res.data?.documents) ? res.data.documents : []);
       setTotalPages(res.data.totalPages ||  1);
       setTotal(res.data.total || 0 );
     } catch { toast.error('Failed to load documents'); }
@@ -114,7 +114,7 @@ export default function AdminDocuments() {
 
   const handleDownloadOriginal = async (doc) => {
     try {
-      const res = await api.get(`/api/admin/documents/${doc.id}/download-original`, { responseType: 'blob' });
+      const res = await api.get(`/admin/documents/${doc.id}/download-original`, { responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a'); a.href = url; a.download = doc.original_filename; a.click();
       URL.revokeObjectURL(url);
@@ -123,7 +123,7 @@ export default function AdminDocuments() {
 
   const handleStatusUpdate = async (docId, status) => {
     try {
-      await api.patch(`/api/admin/documents/${docId}/status`, { status });
+      await api.patch(`/admin/documents/${docId}/status`, { status });
       toast.success('Status updated');
       fetchDocs();
     } catch { toast.error('Update failed'); }
@@ -170,7 +170,7 @@ export default function AdminDocuments() {
             <div className="table-wrapper">
               {loading ? (
                 <div style={{ padding: 60, textAlign: 'center' }}><div className="spinner spinner-dark" style={{ margin: '0 auto' }} /></div>
-              ) : documents.length === 0 ? (
+              ) : documents?.length === 0 ? (
                 <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>
                   <FileText size={48} style={{ margin: '0 auto 12px', display: 'block', color: '#e2e8f0' }} />
                   No documents found
@@ -188,7 +188,7 @@ export default function AdminDocuments() {
                     </tr>
                   </thead>
                   <tbody>
-                    {documents.map(doc => (
+                    {documents?.map(doc => (
                       <tr key={doc.id}>
                         <td>
                           <div style={{ fontWeight: 600, fontSize: 13, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.original_filename}>
