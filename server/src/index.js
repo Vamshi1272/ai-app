@@ -25,8 +25,7 @@ const __dirname = dirname(__filename);
 // CORS
 app.use(cors({
   origin: [
-    "https://ai-app3-ikoh.onrender.com", // ✅ your frontend URL
-    "http://localhost:5173"
+    "https://ai-app3-ikoh.onrender.com"
   ],
   credentials: true
 }));
