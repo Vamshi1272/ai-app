@@ -170,7 +170,7 @@ export default function AdminDocuments() {
             <div className="table-wrapper">
               {loading ? (
                 <div style={{ padding: 60, textAlign: 'center' }}><div className="spinner spinner-dark" style={{ margin: '0 auto' }} /></div>
-              ) : documents?.length === 0 ? (
+              ) : !documents || documents.length === 0 ? (
                 <div style={{ padding: 60, textAlign: 'center', color: '#94a3b8' }}>
                   <FileText size={48} style={{ margin: '0 auto 12px', display: 'block', color: '#e2e8f0' }} />
                   No documents found
